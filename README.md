@@ -1,6 +1,10 @@
 # ws2812-clock
 Clock with LEDs of type WS2812, controlled by ESP8266 , for the C3MA room
 
+The code runs on the NodeMCU firmware for the ESP8266. Thanks to all contributors of this project (http://github.com/nodemcu/nodemcu-firmware)
+A firmware with the required modules to run this code has been included in this repository.
+
+
 two rings have to be built with WS2812-LEDs.
 One ring shows the seconds, the other one shows the hours and minutes.
 Also there is code to control a I2C-Display (128x64) to show the time.
