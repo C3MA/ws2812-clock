@@ -22,4 +22,5 @@ led-ring showing the hours and minutes: GPIO5
 
 connect CH_PD with +3.3V
 
+Thanks for the information regarding Date and Time on this page: https://scriptinghelpers.org/questions/25121/how-do-you-get-the-date-and-time-from-unix-epoch-time
 
