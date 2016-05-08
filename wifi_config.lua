@@ -89,7 +89,8 @@ function logic()
 --   print("Clock: ", date.hours, ":", date.minutes, ":", date.seconds, "   ", date.day, ".",date. month, ".", date.year)
    --ws2812.writergb(1,string.char(0):rep(360))
    ledstring_sec = string.char(0,0,0):rep(date.seconds) .. string.char(0,30,0) .. string.char(0,0,0):rep(60-date.seconds-1)
-   if (date.hours>12) then
+--on AM time (0:00-11:59) blue color, on PM time (12:00-23:59) yellow color
+   if (date.hours>11) then
      hourcolor = string.char(30,30,0)
    else
      hourcolor = string.char(0,0,30)
