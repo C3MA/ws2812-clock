@@ -1,11 +1,11 @@
 --Function to save WiFi-parameters into file-system as wlancfg.lua
-function save_wifi_param()
- ssid,password,bssid_set,bssid=wifi.sta.getconfig()
+function save_wifi_param(ssid,password,ntpserver)
  file.remove("wlancfg.lua");
  file.open("wlancfg.lua","w+");
  w = file.writeline('-- Tell the chip to connect to thi access point');
  w = file.writeline('wifi.setmode(wifi.STATION)');
- w = file.write('wifi.sta.config("' .. ssid .. '","' .. password .. '")');
+ w = file.writeline('wifi.sta.config("' .. ssid .. '","' .. password .. '")');
+ w = file.writeline('sntpserverhostname="' .. ntpserver ..'"');
  file.close();
  ssid,password,bssid_set,bssid=nil,nil,nil,nil
 end
@@ -41,25 +41,7 @@ function CurrentTime(unixTime, TIMEZONE, DST)
     }
 end
 
-function startTelnetServer()
-   -- a simple telnet server
-    s=net.createServer(net.TCP, 180)
-    s:listen(2323, function(c)
-       function s_output(str)
-          if(c~=nil)
-             then c:send(str)
-          end
-       end
-       node.output(s_output, 0)   -- re-direct output to function s_ouput.
-       c:on("receive", function(c, l)
-          node.input(l)           -- works like pcall(loadstring(l)) but support multiples separate lines
-       end)
-       c:on("disconnection", function(c)
-          node.output(nil)        -- un-register the redirect output function, output goes to serial
-       end)
-       print("Welcome to NodeMCU world.")
-    end)
-end
+
 
 
 
@@ -69,13 +51,15 @@ function logic()
   prepare()
   tmr.alarm(2, 600000, 1, function ()
   --resync time every 10 minutes (600s)
-  sntp.sync('192.53.103.108',
-    function(sec,usec,server)
-     print('sync', sec, usec, server)
-    end,
-    function()
-      print('failed!')
-    end
+  net.dns.resolve(sntpserverhostname, function(sk,sntpip)
+   sntp.sync(sntpip,
+     function(sec,usec,sntpip)
+      print('sync', sec, usec, sntpip)
+     end,
+     function()
+       print('failed!')
+     end)
+   end
  )
    
   end)
@@ -111,24 +95,27 @@ function logic()
     ws2812.writergb(1,ledstring_hour_min)
     ws2812.writergb(2,ledstring_sec)
   end)
+
+
 end
-
-
-
 
 
 --init_logic run once after successfully established network-connection 
 function init_logic()
 --Sync time with ptbtime1.ptb.de
- sntp.sync('192.53.103.108',
-    function(sec,usec,server)
-     print('sync', sec, usec, server)
-    end,
-    function()
-      print('failed!')
-    end
+  net.dns.resolve(sntpserverhostname, function(sk,sntpip)
+   sntp.sync(sntpip,
+     function(sec,usec,sntpip)
+      print('sync', sec, usec, sntpip)
+     end,
+     function()
+       print('failed!')
+     end)
+   end
  )
- startTelnetServer()
+-- startTelnetServer()
+ dofile("webserver.lua")
+ startWebServer()
  --TIMEZONE CET (UTC+1)
  TIMEZONE=1
  --daylight savings time: +1h
@@ -143,11 +130,14 @@ end
 --MAIN PROGRAM ENTRY POINT, CALLED FROM init.lua
 
 --if unable to connect for 30 seconds, start enduser_setup-routine
- --load Wifi-configuration and try to connect
+--load Wifi-configuration and try to connect
 dofile("wlancfg.lua")
 
- --load OLED Display
+--load OLED Display
 dofile("display.lua")
+
+--load webserver routines
+
 connect_counter = 0
 tmr.alarm(0, 100, 1, function()
  if wifi.sta.status() ~= 5 then
@@ -158,7 +148,8 @@ tmr.alarm(0, 100, 1, function()
       print("Starting WiFi setup mode")
       enduser_setup.start(
        function()
-        save_wifi_param();
+        ssid,password,bssid_set,bssid=wifi.sta.getconfig()
+        save_wifi_param(ssid,password,"ptbtime1.ptb.de");
         print("Connected to wifi as:" .. wifi.sta.getip());
         print("Saved parameters in wlancfg.lua");
         init_logic();

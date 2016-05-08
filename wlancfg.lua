@@ -1,3 +1,4 @@
--- Tell the chip to connect to thi access point
+-- Tell the chip to connect to this access point
 wifi.setmode(wifi.STATION)
-wifi.sta.config("xxxx","xxxx")
+wifi.sta.config("XXXXXX","XXXXXXXXXXXXXX")
+sntpserverhostname="ptbtime1.ptb.de"
