@@ -6,12 +6,15 @@ function sendWebPage(conn,answertype)
   buf = buf.. "<label for=\"ssid\">WIFI-SSID: <input id=\"ssid\" name=\"ssid\" value=\"" .. ssid .. "\"></label><br/>"
   buf = buf.. "<label for=\"password\">Password: <input id=\"password\" name=\"password\"></label><br/>"
   buf = buf.. "<label for=\"sntpserver\">SNTP Server: <input id=\"sntpserver\" name=\"sntpserver\" value=\"" .. sntpserverhostname .. "\"></label><br/>"
+  buf = buf.. "<label for=\"timezoneoffset\">Offset from UTC: <input id=\"timezoneoffset\" name=\"timezoneoffset\" value=\"" .. timezoneoffset .. "\"></label><br/>"
+  buf = buf.. "<label for=\"dst\">DST: <select id=\"dst\" name=\"dst\"><option value=\"1\">yes</option><option value=\"0\">no</option></select></label><br/>"
   buf = buf.. "<input type=\"submit\" value=\"Configure Clock\"></form>"
   if answertype>1 then
    buf = buf .. "<h2>New configuration saved</h2\n>"
   end 
   buf = buf .. "\n</body></html>"
-  conn:send(buf) 
+  conn:send(buf)
+  buf=nil
 end
 
 function startWebServer()
@@ -33,12 +36,10 @@ function startWebServer()
      for i, j in string.gmatch(postRequestData, "(%w+)=([^&]+)&*") do
        _POST[i] = j
      end
-     if ((_POST.ssid~=nil) and (_POST.password~=nil) and (_POST.sntpserver~=nil)) then
+     postRequestData=nil
+     if ((_POST.ssid~=nil) and (_POST.password~=nil) and (_POST.sntpserver~=nil) and (_POST.timezoneoffset~=nil) and (_POST.dst~=nil)) then
       tmr.stop(1)
-      ssid=_POST.ssid
-      password=_POST.password
-      sntpserver=_POST.sntpserver
-      save_wifi_param(ssid,password,sntpserver)
+      save_wifi_param(_POST.ssid,_POST.password,_POST.sntpserver,_POST.timezoneoffset,_POST.dst)
       sendWebPage(conn,2)
      else
       ssid, password, bssid_set, bssid = wifi.sta.getconfig()

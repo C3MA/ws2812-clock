@@ -1,11 +1,13 @@
 --Function to save WiFi-parameters into file-system as wlancfg.lua
-function save_wifi_param(ssid,password,ntpserver)
+function save_wifi_param(ssid,password,ntpserver,timezoneoffset,dst)
  file.remove("wlancfg.lua");
  file.open("wlancfg.lua","w+");
  w = file.writeline('-- Tell the chip to connect to thi access point');
  w = file.writeline('wifi.setmode(wifi.STATION)');
  w = file.writeline('wifi.sta.config("' .. ssid .. '","' .. password .. '")');
  w = file.writeline('sntpserverhostname="' .. ntpserver ..'"');
+ w = file.writeline('timezoneoffset="' .. timezoneoffset ..'"');
+ w = file.writeline('dst="' .. dst ..'"');
  file.close();
  ssid,password,bssid_set,bssid=nil,nil,nil,nil
 end
@@ -68,7 +70,7 @@ function logic()
   tmr.alarm(1, 1000, 1 ,function()
    disp:firstPage()
    unix_sec, unix_usec = rtctime.get()
-   date = CurrentTime(unix_sec, TIMEZONE, DST)
+   date = CurrentTime(unix_sec, timezoneoffset, dst)
 --   print("Time : " , unix_sec)
 --   print("Clock: ", date.hours, ":", date.minutes, ":", date.seconds, "   ", date.day, ".",date. month, ".", date.year)
    --ws2812.writergb(1,string.char(0):rep(360))
@@ -116,10 +118,6 @@ function init_logic()
 -- startTelnetServer()
  dofile("webserver.lua")
  startWebServer()
- --TIMEZONE CET (UTC+1)
- TIMEZONE=1
- --daylight savings time: +1h
- DST=1
  logic()
 end
 
@@ -149,7 +147,7 @@ tmr.alarm(0, 100, 1, function()
       enduser_setup.start(
        function()
         ssid,password,bssid_set,bssid=wifi.sta.getconfig()
-        save_wifi_param(ssid,password,"ptbtime1.ptb.de");
+        save_wifi_param(ssid,password,"ptbtime1.ptb.de",0,0);
         print("Connected to wifi as:" .. wifi.sta.getip());
         print("Saved parameters in wlancfg.lua");
         init_logic();
