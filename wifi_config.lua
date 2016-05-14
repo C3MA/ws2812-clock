@@ -84,9 +84,9 @@ function init_logic()
  )
 
 --load time calculation routines
- dofile("timecore.lua")
+ dofile("timecore.lc")
 -- startServer
- dofile("webserver.lua")
+ dofile("webserver.lc")
  startWebServer()
  logic()
 end
@@ -102,7 +102,7 @@ end
 dofile("wlancfg.lua")
 
 --load OLED Display
-dofile("display.lua")
+dofile("display.lc")
 
 
 connect_counter = 0
