@@ -35,10 +35,7 @@ function logic()
    disp:firstPage()
    unix_sec, unix_usec = rtctime.get()
    date = getLocalTime(unix_sec +1,timezoneoffset)
-   print("Es ist " .. date.hours ..":" .. date.minutes ..":" .. date.seconds .. " am " ..date.day .. "." .. date.month .."." ..date.year)
---   print("Time : " , unix_sec)
---   print("Clock: ", date.hours, ":", date.minutes, ":", date.seconds, "   ", date.day, ".",date. month, ".", date.year)
-   --ws2812.writergb(1,string.char(0):rep(360))
+--   print("Es ist " .. date.hours ..":" .. date.minutes ..":" .. date.seconds .. " am " ..date.day .. "." .. date.month .."." ..date.year)
    ledstring_sec = string.char(0,0,0):rep(date.seconds) .. string.char(0,30,0) .. string.char(0,0,0):rep(60-date.seconds-1)
 --on AM time (0:00-11:59) blue color, on PM time (12:00-23:59) yellow color
    if (date.hours>11) then
@@ -110,9 +107,15 @@ tmr.alarm(0, 100, 1, function()
  if wifi.sta.status() ~= 5 then
     connect_counter = connect_counter + 1
     print("Connecting to AP...")
+    if (connect_counter % 10 > 5) then
+      ws2812.writergb(1,string.char(20,0,0):rep(60))
+    else
+      ws2812.writergb(1,string.char(0,0,0):rep(60))
+    end
     if(connect_counter == 300) then
       tmr.stop(0)
       print("Starting WiFi setup mode")
+      ws2812.write(1,string.char(0,20,20):rep(60))
       enduser_setup.start(
        function()
         ssid,password,bssid_set,bssid=wifi.sta.getconfig()
