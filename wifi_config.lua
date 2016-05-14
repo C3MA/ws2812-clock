@@ -1,5 +1,5 @@
 --Function to save WiFi-parameters into file-system as wlancfg.lua
-function save_wifi_param(ssid,password,ntpserver,timezoneoffset,dst)
+function save_wifi_param(ssid,password,ntpserver,timezoneoffset)
  file.remove("wlancfg.lua");
  file.open("wlancfg.lua","w+");
  w = file.writeline('-- Tell the chip to connect to thi access point');
@@ -7,7 +7,6 @@ function save_wifi_param(ssid,password,ntpserver,timezoneoffset,dst)
  w = file.writeline('wifi.sta.config("' .. ssid .. '","' .. password .. '")');
  w = file.writeline('sntpserverhostname="' .. ntpserver ..'"');
  w = file.writeline('timezoneoffset="' .. timezoneoffset ..'"');
- w = file.writeline('dst="' .. dst ..'"');
  file.close();
  ssid,password,bssid_set,bssid=nil,nil,nil,nil
 end
@@ -35,8 +34,7 @@ function logic()
   tmr.alarm(1, 1000, 1 ,function()
    disp:firstPage()
    unix_sec, unix_usec = rtctime.get()
-   utc_year, utc_month, utc_day, utc_hours, utc_minutes, utc_seconds, utc_dow = gettime(unix_sec+1)
-   date = getLocalTime(utc_year , utc_month, utc_day, utc_hours, utc_minutes, utc_seconds, utc_dow)
+   date = getLocalTime(unix_sec +1,timezoneoffset)
    print("Es ist " .. date.hours ..":" .. date.minutes ..":" .. date.seconds .. " am " ..date.day .. "." .. date.month .."." ..date.year)
 --   print("Time : " , unix_sec)
 --   print("Clock: ", date.hours, ":", date.minutes, ":", date.seconds, "   ", date.day, ".",date. month, ".", date.year)
@@ -106,13 +104,6 @@ dofile("wlancfg.lua")
 --load OLED Display
 dofile("display.lua")
 
---load webserver routines
-dofile("webserver.lua")
-
---load time functions
-dofile("timecore.lua")
-
-
 
 connect_counter = 0
 tmr.alarm(0, 100, 1, function()
@@ -125,7 +116,7 @@ tmr.alarm(0, 100, 1, function()
       enduser_setup.start(
        function()
         ssid,password,bssid_set,bssid=wifi.sta.getconfig()
-        save_wifi_param(ssid,password,"ptbtime1.ptb.de",0,0);
+        save_wifi_param(ssid,password,"ptbtime1.ptb.de",0);
         print("Connected to wifi as:" .. wifi.sta.getip());
         print("Saved parameters in wlancfg.lua");
         init_logic();
