@@ -12,41 +12,6 @@ function save_wifi_param(ssid,password,ntpserver,timezoneoffset,dst)
  ssid,password,bssid_set,bssid=nil,nil,nil,nil
 end
 
-
-function CurrentDate(z)
-    local z = math.floor(z / 86400) + 719468
-    local era = math.floor(z / 146097)
-    local doe = math.floor(z - era * 146097)
-    local yoe = math.floor((doe - doe / 1460 + doe / 36524 - doe / 146096) / 365)
-    local y = math.floor(yoe + era * 400)
-    local doy = doe - math.floor((365 * yoe + yoe / 4 - yoe / 100))
-    local mp = math.floor((5 * doy + 2) / 153)
-    local d = math.ceil(doy - (153 * mp + 2) / 5 + 1)
-    local m = math.floor(mp + (mp < 10 and 3 or -9))
-    return y + (m <= 2 and 1 or 0), m, d
-end
-
-function CurrentTime(unixTime, TIMEZONE, DST)
-    local unixTime = math.floor(unixTime + (60*60*((TIMEZONE+DST) or 0)))
-    local hours = math.floor(unixTime / 3600 % 24)
-    local minutes = math.floor(unixTime / 60 % 60)
-    local seconds = math.floor(unixTime % 60)
-
-    local year, month, day = CurrentDate(unixTime)
-    return {
-        year = year,
-        month = month, 
-        day = day,
-        hours = hours,
-        minutes = minutes < 10 and "0" .. minutes or minutes,
-        seconds = seconds < 10 and "0" .. seconds or seconds
-    }
-end
-
-
-
-
-
 --main routine
 function logic()
 --do lcd-stuff from display.lua  
@@ -70,7 +35,9 @@ function logic()
   tmr.alarm(1, 1000, 1 ,function()
    disp:firstPage()
    unix_sec, unix_usec = rtctime.get()
-   date = CurrentTime(unix_sec, timezoneoffset, dst)
+   utc_year, utc_month, utc_day, utc_hours, utc_minutes, utc_seconds, utc_dow = gettime(unix_sec+1)
+   date = getLocalTime(utc_year , utc_month, utc_day, utc_hours, utc_minutes, utc_seconds, utc_dow)
+   print("Es ist " .. date.hours ..":" .. date.minutes ..":" .. date.seconds .. " am " ..date.day .. "." .. date.month .."." ..date.year)
 --   print("Time : " , unix_sec)
 --   print("Clock: ", date.hours, ":", date.minutes, ":", date.seconds, "   ", date.day, ".",date. month, ".", date.year)
    --ws2812.writergb(1,string.char(0):rep(360))
@@ -96,6 +63,8 @@ function logic()
     until disp:nextPage() == false
     ws2812.writergb(1,ledstring_hour_min)
     ws2812.writergb(2,ledstring_sec)
+   
+   
   end)
 
 
@@ -115,7 +84,10 @@ function init_logic()
      end)
    end
  )
--- startTelnetServer()
+
+--load time calculation routines
+ dofile("timecore.lua")
+-- startServer
  dofile("webserver.lua")
  startWebServer()
  logic()
@@ -135,6 +107,12 @@ dofile("wlancfg.lua")
 dofile("display.lua")
 
 --load webserver routines
+dofile("webserver.lua")
+
+--load time functions
+dofile("timecore.lua")
+
+
 
 connect_counter = 0
 tmr.alarm(0, 100, 1, function()
