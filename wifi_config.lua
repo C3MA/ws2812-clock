@@ -1,5 +1,5 @@
 --Function to save WiFi-parameters into file-system as wlancfg.lua
-function save_wifi_param(ssid,password,ntpserver,timezoneoffset,dst)
+function save_wifi_param(ssid,password,ntpserver,timezoneoffset)
  file.remove("wlancfg.lua");
  file.open("wlancfg.lua","w+");
  w = file.writeline('-- Tell the chip to connect to thi access point');
@@ -7,45 +7,9 @@ function save_wifi_param(ssid,password,ntpserver,timezoneoffset,dst)
  w = file.writeline('wifi.sta.config("' .. ssid .. '","' .. password .. '")');
  w = file.writeline('sntpserverhostname="' .. ntpserver ..'"');
  w = file.writeline('timezoneoffset="' .. timezoneoffset ..'"');
- w = file.writeline('dst="' .. dst ..'"');
  file.close();
  ssid,password,bssid_set,bssid=nil,nil,nil,nil
 end
-
-
-function CurrentDate(z)
-    local z = math.floor(z / 86400) + 719468
-    local era = math.floor(z / 146097)
-    local doe = math.floor(z - era * 146097)
-    local yoe = math.floor((doe - doe / 1460 + doe / 36524 - doe / 146096) / 365)
-    local y = math.floor(yoe + era * 400)
-    local doy = doe - math.floor((365 * yoe + yoe / 4 - yoe / 100))
-    local mp = math.floor((5 * doy + 2) / 153)
-    local d = math.ceil(doy - (153 * mp + 2) / 5 + 1)
-    local m = math.floor(mp + (mp < 10 and 3 or -9))
-    return y + (m <= 2 and 1 or 0), m, d
-end
-
-function CurrentTime(unixTime, TIMEZONE, DST)
-    local unixTime = math.floor(unixTime + (60*60*((TIMEZONE+DST) or 0)))
-    local hours = math.floor(unixTime / 3600 % 24)
-    local minutes = math.floor(unixTime / 60 % 60)
-    local seconds = math.floor(unixTime % 60)
-
-    local year, month, day = CurrentDate(unixTime)
-    return {
-        year = year,
-        month = month, 
-        day = day,
-        hours = hours,
-        minutes = minutes < 10 and "0" .. minutes or minutes,
-        seconds = seconds < 10 and "0" .. seconds or seconds
-    }
-end
-
-
-
-
 
 --main routine
 function logic()
@@ -70,11 +34,9 @@ function logic()
   tmr.alarm(1, 1000, 1 ,function()
    disp:firstPage()
    unix_sec, unix_usec = rtctime.get()
-   date = CurrentTime(unix_sec, timezoneoffset, dst)
---   print("Time : " , unix_sec)
---   print("Clock: ", date.hours, ":", date.minutes, ":", date.seconds, "   ", date.day, ".",date. month, ".", date.year)
-   --ws2812.writergb(1,string.char(0):rep(360))
-   ledstring_sec = string.char(0,0,0):rep(date.seconds) .. string.char(0,5,0) .. string.char(0,0,0):rep(60-date.seconds-1)
+   date = getLocalTime(unix_sec +1,timezoneoffset)
+--   print("Es ist " .. date.hours ..":" .. date.minutes ..":" .. date.seconds .. " am " ..date.day .. "." .. date.month .."." ..date.year)
+   ledstring_sec = string.char(0,0,0):rep(date.seconds) .. string.char(0,30,0) .. string.char(0,0,0):rep(60-date.seconds-1)
 --on AM time (0:00-11:59) blue color, on PM time (12:00-23:59) yellow color
    if (date.hours>11) then
      hourcolor = string.char(5,0,5)
@@ -98,6 +60,8 @@ function logic()
     until disp:nextPage() == false
     ws2812.writergb(1,ledstring_hour_min)
     ws2812.writergb(2,ledstring_sec)
+   
+   
   end)
 
 
@@ -117,8 +81,11 @@ function init_logic()
      end)
    end
  )
--- startTelnetServer()
- dofile("webserver.lua")
+
+--load time calculation routines
+ dofile("timecore.lc")
+-- startServer
+ dofile("webserver.lc")
  startWebServer()
  logic()
 end
@@ -134,22 +101,27 @@ end
 dofile("wlancfg.lua")
 
 --load OLED Display
-dofile("display.lua")
+dofile("display.lc")
 
---load webserver routines
 
 connect_counter = 0
 tmr.alarm(0, 100, 1, function()
  if wifi.sta.status() ~= 5 then
     connect_counter = connect_counter + 1
     print("Connecting to AP...")
+    if (connect_counter % 10 > 5) then
+      ws2812.writergb(1,string.char(20,0,0):rep(60))
+    else
+      ws2812.writergb(1,string.char(0,0,0):rep(60))
+    end
     if(connect_counter == 300) then
       tmr.stop(0)
       print("Starting WiFi setup mode")
+      ws2812.write(1,string.char(0,20,20):rep(60))
       enduser_setup.start(
        function()
         ssid,password,bssid_set,bssid=wifi.sta.getconfig()
-        save_wifi_param(ssid,password,"ptbtime1.ptb.de",0,0);
+        save_wifi_param(ssid,password,"ptbtime1.ptb.de",0);
         print("Connected to wifi as:" .. wifi.sta.getip());
         print("Saved parameters in wlancfg.lua");
         init_logic();
