@@ -74,16 +74,18 @@ function logic()
 --   print("Time : " , unix_sec)
 --   print("Clock: ", date.hours, ":", date.minutes, ":", date.seconds, "   ", date.day, ".",date. month, ".", date.year)
    --ws2812.writergb(1,string.char(0):rep(360))
-   ledstring_sec = string.char(0,0,0):rep(date.seconds) .. string.char(0,30,0) .. string.char(0,0,0):rep(60-date.seconds-1)
+   ledstring_sec = string.char(0,0,0):rep(date.seconds) .. string.char(0,5,0) .. string.char(0,0,0):rep(60-date.seconds-1)
 --on AM time (0:00-11:59) blue color, on PM time (12:00-23:59) yellow color
    if (date.hours>11) then
-     hourcolor = string.char(30,30,0)
+     hourcolor = string.char(5,0,5)
+     hourcolor_end = string.char(15,0,15)
    else
-     hourcolor = string.char(0,0,30)
+     hourcolor = string.char(0,0,5)
+     hourcolor_end = string.char(0,0,15)
    end
    ledcount4hours = (date.hours%12)*5+(date.minutes/12)+1
-   ledstring_hour = hourcolor:rep(ledcount4hours) .. string.char(0,0,0):rep(60-ledcount4hours+1)
-   ledstring_hour_min = string.sub(ledstring_hour,1,(date.minutes)*3) .. string.char(30,0,0) .. string.sub(ledstring_hour,(1+date.minutes*3)+3,180)
+   ledstring_hour = hourcolor:rep(ledcount4hours-1) .. hourcolor_end  .. string.char(0,0,0):rep(60-ledcount4hours+1)
+   ledstring_hour_min = string.sub(ledstring_hour,1,(date.minutes)*3) .. string.char(5,0,0) .. string.sub(ledstring_hour,(1+date.minutes*3)+3,180)
    
    repeat
     disp:drawStr(42, 20, date.seconds)
