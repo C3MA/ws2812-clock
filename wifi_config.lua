@@ -1,3 +1,11 @@
+-- Definition of colors
+colorHourAM=string.char(0,0,5)
+colorHourAMend=string.char(0,0,40)
+colorHourPM=string.char(15,15,0)
+colorHourPMend=string.char(20,20,0)
+colorMin=string.char(40,0,0)
+colorSec=string.char(0,30,0)
+
 --Function to save WiFi-parameters into file-system as wlancfg.lua
 function save_wifi_param(ssid,password,ntpserver,timezoneoffset)
  file.remove("wlancfg.lua");
@@ -36,18 +44,18 @@ function logic()
    unix_sec, unix_usec = rtctime.get()
    date = getLocalTime(unix_sec +1,timezoneoffset)
 --   print("Es ist " .. date.hours ..":" .. date.minutes ..":" .. date.seconds .. " am " ..date.day .. "." .. date.month .."." ..date.year)
-   ledstring_sec = string.char(0,0,0):rep(date.seconds) .. string.char(0,30,0) .. string.char(0,0,0):rep(60-date.seconds-1)
+   ledstring_sec = string.char(0,0,0):rep(date.seconds) .. colorSec .. string.char(0,0,0):rep(60-date.seconds-1)
 --on AM time (0:00-11:59) blue color, on PM time (12:00-23:59) yellow color
    if (date.hours>11) then
-     hourcolor = string.char(5,0,5)
-     hourcolor_end = string.char(15,0,15)
+     hourcolor = colorHourPM
+     hourcolor_end = colorHourPMend
    else
-     hourcolor = string.char(0,0,5)
-     hourcolor_end = string.char(0,0,15)
+     hourcolor = colorHourAM
+     hourcolor_end = colorHourAMend
    end
    ledcount4hours = (date.hours%12)*5+(date.minutes/12)+1
    ledstring_hour = hourcolor:rep(ledcount4hours-1) .. hourcolor_end  .. string.char(0,0,0):rep(60-ledcount4hours+1)
-   ledstring_hour_min = string.sub(ledstring_hour,1,(date.minutes)*3) .. string.char(5,0,0) .. string.sub(ledstring_hour,(1+date.minutes*3)+3,180)
+   ledstring_hour_min = string.sub(ledstring_hour,1,(date.minutes)*3) .. colorMin .. string.sub(ledstring_hour,(1+date.minutes*3)+3,180)
    
    repeat
     disp:drawStr(42, 20, date.seconds)
